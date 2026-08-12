@@ -77,7 +77,11 @@ export class ViewerEngine {
   private glowPulse = uniform(0.6);
   private rimColor = uniform(new THREE.Color(0xffe8c8));
   private rimIntensity = uniform(0.14);
-  private wireOverlay: THREE.Mesh | null = null;
+  private wireOverlays: THREE.Mesh[] = [];
+  /** surfaces swapped to plaster for the wireframe view, and their originals */
+  private wireSwapped: { mesh: THREE.Mesh; material: THREE.Material | THREE.Material[] }[] = [];
+  private wireOn = false;
+  private xrayOn = false;
   private grid: THREE.PolarGridHelper | null = null;
   /* lighting rig — kept as fields so an empire swap can re-tint it */
   private keyLight!: THREE.DirectionalLight;
@@ -551,6 +555,9 @@ export class ViewerEngine {
     this.occlusionCache.clear();
     this.attach(model);
     this.touchResidency(model.empireId);
+    // carry the active layers onto the dwelling that just arrived
+    this.buildWireframe();
+    if (this.xrayOn) this.setXray(true);
   }
 
   /** Mark an empire as most-recently-used and evict past the residency cap.
@@ -1099,30 +1106,82 @@ export class ViewerEngine {
     this.markShadowDirty(3);
   }
 
+  /**
+   * Rebuild the wireframe overlay against whatever is on stage.
+   *
+   * Each overlay is parented to the mesh it traces, carrying no transform of
+   * its own, so it inherits the entire chain the model was normalised through.
+   * Copying only the mesh's own local transform onto the model group — as this
+   * used to — skips the normalising scale and the recentre that live on the
+   * intermediate node, which drew the overlay far too small and sunk inside
+   * the building.
+   */
+  private buildWireframe() {
+    this.clearWireframe();
+    if (!this.wireOn || !this.current) return;
+    this.current.meshes.forEach((src) => {
+      // The building's own textured surface is swapped for pale plaster while
+      // the wireframe is up. Drawn over a fully rendered dwelling the lines
+      // read as surface detail rather than as structure; over a flat, lit
+      // plaster form they read as a drawing. The surface is still there, so
+      // edges on the far side stay hidden and the form is legible.
+      this.wireSwapped.push({ mesh: src, material: src.material });
+      src.material = new THREE.MeshStandardMaterial({
+        color: 0xf2ebdd,
+        roughness: 0.96,
+        metalness: 0,
+        polygonOffset: true,
+        polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1,
+      });
+
+      const mat = new THREE.MeshBasicMaterial({
+        wireframe: true,
+        color: 0x8c452c,
+        transparent: true,
+        opacity: 0.6,
+        depthWrite: false,
+        // lift the lines off the surface they trace, or they z-fight with it
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2,
+      });
+      const overlay = new THREE.Mesh(src.geometry, mat);
+      overlay.renderOrder = 2;
+      overlay.castShadow = false;
+      overlay.receiveShadow = false;
+      src.add(overlay);
+      this.wireOverlays.push(overlay);
+    });
+    this.markShadowDirty(2);
+  }
+
+  private clearWireframe() {
+    this.wireOverlays.forEach((o) => {
+      o.parent?.remove(o);
+      // the geometry is the source mesh's own and is not ours to dispose
+      (o.material as THREE.Material).dispose();
+    });
+    this.wireOverlays = [];
+    // restore from the record rather than from `current`, so a swap that
+    // happens while the layer is up still puts the old dwelling back
+    this.wireSwapped.forEach(({ mesh, material }) => {
+      const plaster = mesh.material;
+      mesh.material = material;
+      if (Array.isArray(plaster)) plaster.forEach((m) => m.dispose());
+      else plaster.dispose();
+    });
+    this.wireSwapped = [];
+  }
+
   setWireframe(on: boolean) {
-    if (on && this.current && !this.wireOverlay) {
-      const src = this.current.meshes[0];
-      if (src) {
-        const mat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0x8c452c, transparent: true, opacity: 0.28 });
-        this.wireOverlay = new THREE.Mesh(src.geometry, mat);
-        this.wireOverlay.position.copy(src.position);
-        this.wireOverlay.quaternion.copy(src.quaternion);
-        this.wireOverlay.scale.copy(src.scale);
-        this.current.group.add(this.wireOverlay);
-      }
-    }
+    this.wireOn = on;
+    this.buildWireframe();
     this.afterMaterialChange();
-    if (this.wireOverlay) {
-      this.wireOverlay.visible = on;
-      if (!on && this.wireOverlay.parent) {
-        this.wireOverlay.parent.remove(this.wireOverlay);
-        (this.wireOverlay.material as THREE.Material).dispose();
-        this.wireOverlay = null;
-      }
-    }
   }
 
   setXray(on: boolean) {
+    this.xrayOn = on;
     if (!this.current) return;
     this.current.meshes.forEach((m) => {
       const mat = m.material as any;

@@ -93,11 +93,11 @@ export default function App() {
 
   const onSwap = useCallback((e: Empire) => setPanelEmpire(e), []);
 
-  const dismissCredits = useCallback(() => {
+  /* const dismissCredits = useCallback(() => {
     setCreditsOpen(false);
     localStorage.setItem("atlas-credits", "dismissed");
   }, []);
-
+*/
   /* hovering a library row starts its download, so the click that follows
      lands on a model that is already parsed rather than paying for it mid-swap */
   const prefetchRef = useRef<((e: Empire) => void) | null>(null);

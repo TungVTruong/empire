@@ -30,7 +30,8 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [creditsOpen, setCreditsOpen] = useState(() => localStorage.getItem("atlas-credits") !== "dismissed");
+  /* const [creditsOpen, setCreditsOpen] = useState(() => localStorage.getItem("atlas-credits") !== "dismissed");*/
+  const [creditsOpen] = useState(() => localStorage.getItem("atlas-credits") !== "dismissed");
   const [focusHotspot, setFocusHotspot] = useState<string | null>(null);
   const [activeNav, setActiveNav] = useState("explore");
   const [reducedMotion, setReducedMotion] = useState(() => mq("(prefers-reduced-motion: reduce)"));

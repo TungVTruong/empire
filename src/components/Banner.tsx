@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { CloseIcon } from "./icons";
 
 interface Props {
   onDismiss: () => void;

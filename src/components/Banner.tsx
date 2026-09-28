@@ -15,7 +15,7 @@ export const Banner = memo(function Banner({ onDismiss }: Props) {
       role="region"
       aria-label="Credits"
     >
-      <p className="text-[0.78rem] leading-snug text-ink-soft sm:text-[0.82rem]">
+      {/* <p className="text-[0.78rem] leading-snug text-ink-soft sm:text-[0.82rem]">
         Every 3D model in this atlas was built with{" "}
         <span className="font-medium text-ink">Tripo AI</span>.
         <a
@@ -27,7 +27,7 @@ export const Banner = memo(function Banner({ onDismiss }: Props) {
           Take a look
           <ArrowRightIcon className="h-3 w-3" aria-hidden />
         </a>
-      </p>
+      </p>*/}
 
       <button
         onClick={onDismiss}

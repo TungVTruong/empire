@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EMPIRES, empireById, DEFAULT_EMPIRE_ID } from "@/data";
 import type { Empire } from "@/types/empire";
-import { Banner } from "@/components/Banner";
+//import { Banner } from "@/components/Banner";
 import { Header } from "@/components/Header";
 import { EmpireLibrary } from "@/components/EmpireLibrary";
 import { Viewer } from "@/components/Viewer";

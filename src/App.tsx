@@ -137,7 +137,7 @@ export default function App() {
       className="flex min-h-screen flex-col bg-paper"
       style={{ "--banner-h": creditsOpen ? "40px" : "0px" } as React.CSSProperties}
     >
-      {creditsOpen && <Banner onDismiss={dismissCredits} />}
+      {/* {creditsOpen && <Banner onDismiss={dismissCredits} />} */}
       <Header onSearchOpen={() => setSearchOpen(true)} onMenuOpen={() => setMenuOpen(true)} onNav={onNav} activeNav={activeNav} />
 
       {/* main stage — sized so the exploration cards below stay in view, and

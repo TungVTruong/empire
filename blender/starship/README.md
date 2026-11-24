@@ -81,6 +81,7 @@ There are 13 groups and roughly 120 values. Run `--dump-params` for the full lis
 - `flaps`, `grid_fins`, `payload_door`: panels and hinges
 - `materials`, `environment`, `camera`, `render`, `animation`: look and motion
 - `include_booster`: set to `false` for the ship alone
+- `camera.follow_ship`: parent the camera rig to the ship so it tracks it through separation; `camera.height` and `camera.target_z` are then measured from the ship base
 
 `validate()` catches impossible combinations before anything is touched, for example nozzles overlapping or poking through the skirt, flaps off the nose cone, or a door wider than the hull.
 

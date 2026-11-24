@@ -220,6 +220,7 @@ class CameraParams:
     clip_end: float = 5000.0
     use_dof: bool = False
     f_stop: float = 8.0
+    follow_ship: bool = False         # parent the rig to the ship: height/target_z become ship-relative
 
 
 @dataclass
@@ -1111,13 +1112,19 @@ def build_geometry(ctx: BuildContext, P: StarshipParams, mats, report: "RunRepor
 # Camera, environment, render
 # =============================================================================
 
-def setup_camera(ctx: BuildContext, P: StarshipParams) -> bpy.types.Object:
-    """Orbit rig: Orbit empty (animated Z) -> Camera tracking a Target empty. Returns the orbit empty."""
+def setup_camera(ctx: BuildContext, P: StarshipParams, rig: Optional[Rig] = None) -> bpy.types.Object:
+    """Orbit rig: Orbit empty (animated Z) -> Camera tracking a Target empty. Returns the orbit empty.
+
+    With camera.follow_ship the whole rig is parented to the ship root, so the camera
+    rides along through stage separation and every distance is measured from the ship base.
+    """
     C = P.camera
     coll = ensure_collection("Starship.Rig", ensure_collection("Starship"))
-    target, _ = ensure_empty(ctx, f"{PREFIX}Cam_Target", coll, None, "SPHERE", 2.0)
+    anchor = rig.ship_root if (C.follow_ship and rig is not None) else None
+    target, _ = ensure_empty(ctx, f"{PREFIX}Cam_Target", coll, anchor, "SPHERE", 2.0)
     target.location = (0, 0, C.target_z)
-    orbit, _ = ensure_empty(ctx, f"{PREFIX}Cam_Orbit", coll, None, "CIRCLE", 10.0)
+    orbit, _ = ensure_empty(ctx, f"{PREFIX}Cam_Orbit", coll, anchor, "CIRCLE", 10.0)
+    orbit.location = (0, 0, 0)
     cam_data = bpy.data.cameras.get(f"{PREFIX}Camera") or bpy.data.cameras.new(f"{PREFIX}Camera")
     cam_data[TAG] = True
     cam_data.lens = C.lens_mm
@@ -1393,7 +1400,7 @@ def generate(params: Optional[StarshipParams] = None, force: bool = False) -> di
     with report.stage("geometry", ctx):
         rig = build_geometry(ctx, P, mats, report)
     with report.stage("camera_environment", ctx):
-        orbit = setup_camera(ctx, P)
+        orbit = setup_camera(ctx, P, rig)
         setup_environment(ctx, P)
         configure_render(P)
     with report.stage("animation", ctx):
